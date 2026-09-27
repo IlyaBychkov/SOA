@@ -1,0 +1,270 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram id="marketplace-microservices" name="C4 — микросервисы">
+    <mxGraphModel dx="2716" dy="1804" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="5600" pageHeight="5450" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0" value="" />
+        <mxCell id="1" parent="0" value="" />
+        <mxCell id="title" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=20;spacing=16;strokeColor=none;align=left;spacing=0;fontSize=36;fontSize=26;" value="&lt;b&gt;МАРКЕТПЛЕЙС — C4 CONTAINER&lt;/b&gt;" vertex="1">
+          <mxGeometry height="90" width="4500" x="1000" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" c4Type="SystemScopeBoundary" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#F2F7FC;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=20;spacing=16;strokeColor=#123C62;strokeWidth=5;fontSize=26;" value="" vertex="1">
+          <mxGeometry height="5000" width="4400" x="1000" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="boundarylabel" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=none;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=20;spacing=16;strokeColor=none;align=left;spacing=0;fontSize=25;fontSize=26;" value="&lt;b&gt;ГРАНИЦА СИСТЕМЫ «МАРКЕТПЛЕЙС»&lt;/b&gt;" vertex="1">
+          <mxGeometry height="65" width="3300" x="1050" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="buyer" c4Type="Person" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#08427B;fontColor=#FFFFFF;strokeColor=#06345F;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=5;shape=mxgraph.c4.person2;fontSize=26;" value="&lt;b&gt;Покупатель&lt;/b&gt;&lt;br&gt;[Person]&lt;br&gt;Выбирает товары,&lt;br&gt;оформляет заказы" vertex="1">
+          <mxGeometry height="270" width="380" x="90" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="seller" c4Type="Person" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#08427B;fontColor=#FFFFFF;strokeColor=#06345F;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=5;shape=mxgraph.c4.person2;fontSize=26;" value="&lt;b&gt;Продавец&lt;/b&gt;&lt;br&gt;[Person]&lt;br&gt;Управляет своими&lt;br&gt;товарами" vertex="1">
+          <mxGeometry height="270" width="380" x="90" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="web" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#118ACD;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=8;shape=mxgraph.c4.webBrowserContainer2;boundedLbl=1;strokeColor2=#0E7DAD;fontSize=26;" value="&lt;b&gt;Веб-приложение&lt;/b&gt;&lt;br&gt;[Container: JavaScript]&lt;br&gt;Интерфейс покупателей,&lt;br&gt;продавцов" vertex="1">
+          <mxGeometry height="300" width="620" x="1110" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="gateway" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=6;shape=hexagon;perimeter=hexagonPerimeter2;fixedSize=1;size=35;fontSize=26;" value="&lt;b&gt;API Gateway&lt;/b&gt;&lt;br&gt;[Container: Nginx]&lt;br&gt;Маршрутизация API" vertex="1">
+          <mxGeometry height="300" width="620" x="1110" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="users" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Пользователи&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Управление аккаунтами,&lt;br&gt;ролями, профилями, контактами" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="usersdb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Пользователи&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;Аккаунты, роли,&lt;br&gt;профили, контакты" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="catalog" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Каталог&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Товары продавцов,&lt;br&gt;категории, цены" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="1650" as="geometry" />
+        </mxCell>
+        <mxCell id="catalogdb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Каталог&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;Товары, категории,&lt;br&gt;цены" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="1650" as="geometry" />
+        </mxCell>
+        <mxCell id="feed" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Лента&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Учёт просмотров, персональная&lt;br&gt;выдача по интересам покупателя" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="2300" as="geometry" />
+        </mxCell>
+        <mxCell id="feeddb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Лента&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;История просмотров,&lt;br&gt;оценки интереса к категориям" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="2300" as="geometry" />
+        </mxCell>
+        <mxCell id="orders" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Заказы&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Оформление заказов,&lt;br&gt;управление статусами" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="2950" as="geometry" />
+        </mxCell>
+        <mxCell id="ordersdb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Заказы&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;Товары заказа, количество,&lt;br&gt;цены на момент покупки,&lt;br&gt;статусы заказов" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="2950" as="geometry" />
+        </mxCell>
+        <mxCell id="payments" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Платежи&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Расчёт суммы, создание,&lt;br&gt;учёт платежей" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="4000" as="geometry" />
+        </mxCell>
+        <mxCell id="paymentsdb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Платежи&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;Попытки, результаты&lt;br&gt;оплаты" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="4000" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications" c4Type="Container" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#28A4D9;fontColor=#FFFFFF;strokeColor=#1F8FBD;strokeWidth=2;fontFamily=Helvetica;fontSize=19;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Уведомления&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:22px&quot;&gt;[Container: Python / FastAPI]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Подготовка сообщений,&lt;br&gt;повторные отправки" vertex="1">
+          <mxGeometry height="300" width="650" x="2200" y="4650" as="geometry" />
+        </mxCell>
+        <mxCell id="notificationsdb" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#DCE9F5;fontColor=#18324B;strokeColor=#153B5B;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=10;shape=cylinder3;size=20;boundedLbl=1;fontSize=26;" value="&lt;b&gt;БД — Уведомления&lt;/b&gt;&lt;br&gt;[Container: PostgreSQL]&lt;br&gt;&lt;br&gt;Сообщения, получатели,&lt;br&gt;статусы отправки, попытки доставки" vertex="1">
+          <mxGeometry height="300" width="650" x="3500" y="4650" as="geometry" />
+        </mxCell>
+        <mxCell id="broker" c4Type="Container" parent="1" style="rounded=0;html=1;whiteSpace=wrap;fillColor=#FFC0CB;fontColor=#18324B;strokeColor=#B46C88;strokeWidth=2;fontFamily=Helvetica;fontSize=26;spacing=10;shape=cylinder3;direction=south;size=20;boundedLbl=1;anchorPointDirection=0;" value="&lt;b&gt;Брокер событий&lt;/b&gt;&lt;br&gt;[Container: Apache Kafka]&lt;br&gt;&lt;br&gt;Доставка событий&lt;br&gt;между сервисами" vertex="1">
+          <mxGeometry height="220" width="620" x="4700" y="3500" as="geometry" />
+        </mxCell>
+        <mxCell id="provider" c4Type="Software System" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#8C8596;fontColor=#FFFFFF;strokeColor=#6C6577;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;ЮKassa&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:21px&quot;&gt;[Software System — External]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Проведение онлайн-платежей" vertex="1">
+          <mxGeometry height="300" width="620" x="80" y="4000" as="geometry" />
+        </mxCell>
+        <mxCell id="email" c4Type="Software System" parent="1" style="rounded=1;html=1;whiteSpace=wrap;fillColor=#8C8596;fontColor=#FFFFFF;strokeColor=#6C6577;strokeWidth=2;fontFamily=Helvetica;fontSize=18;spacing=16;arcSize=10;fontSize=26;" value="&lt;b&gt;Яндекс Почта&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:21px&quot;&gt;[Software System — External]&lt;/span&gt;&lt;br&gt;&lt;br&gt;Отправка email-уведомлений&lt;br&gt;SMTP / TLS" vertex="1">
+          <mxGeometry height="300" width="620" x="80" y="4650" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" edge="1" parent="1" source="buyer" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.6296296296296297;exitPerimeter=0;entryX=0.0;entryY=0.3333333333333333;entryPerimeter=0;labelWidth=460;endSize=24;" target="web" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Использует маркетплейс&lt;br&gt;HTTPS&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.03125" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge2" edge="1" parent="1" source="seller" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.6296296296296297;exitPerimeter=0;entryX=0.0;entryY=0.7333333333333333;entryPerimeter=0;labelWidth=460;endSize=24;" target="web" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Управляет товарами&lt;br&gt;HTTPS&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.550561797752809" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="800" y="970" />
+              <mxPoint x="800" y="720" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge3" edge="1" parent="1" source="web" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.5;exitY=1.0;exitPerimeter=0;entryX=0.5;entryY=0.0;entryPerimeter=0;labelWidth=460;endSize=24;" target="gateway" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Вызывает API&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge4" edge="1" parent="1" source="gateway" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.6666666666666666;entryPerimeter=0;labelWidth=280;endSize=24;" target="users" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Запросы API&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.36170212765957444" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge5" edge="1" parent="1" source="gateway" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.22580645161290322;exitY=1.0;exitPerimeter=0;entryX=0.0;entryY=0.3;entryPerimeter=0;labelWidth=280;endSize=24;" target="catalog" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Запросы API&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.7761194029850746" as="geometry">
+            <Array as="points">
+              <mxPoint x="1250" y="1740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge6" edge="1" parent="1" source="gateway" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.3870967741935484;exitY=1.0;exitPerimeter=0;entryX=0.0;entryY=0.3;entryPerimeter=0;labelWidth=280;endSize=24;" target="feed" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Запрашивает ленту,&lt;br&gt;передаёт просмотры&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.8412698412698412" as="geometry">
+            <Array as="points">
+              <mxPoint x="1350" y="2390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge7" edge="1" parent="1" source="gateway" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.5080645161290323;exitY=1.0;exitPerimeter=0;entryX=0.0;entryY=0.3;entryPerimeter=0;labelWidth=280;endSize=24;" target="orders" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Запросы API&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.8782961460446248" as="geometry">
+            <Array as="points">
+              <mxPoint x="1425" y="3040" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge8" edge="1" parent="1" source="gateway" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.6290322580645161;exitY=1.0;exitPerimeter=0;entryX=0.0;entryY=0.3;entryPerimeter=0;labelWidth=280;endSize=24;" target="payments" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Запросы API&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.9127906976744187" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="4090" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge9" edge="1" parent="1" source="users" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="usersdb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.0022" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge10" edge="1" parent="1" source="catalog" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="catalogdb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge11" edge="1" parent="1" source="feed" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="feeddb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge12" edge="1" parent="1" source="orders" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="ordersdb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge13" edge="1" parent="1" source="payments" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="paymentsdb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge14" edge="1" parent="1" source="notifications" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=1.0;exitY=0.5;exitPerimeter=0;entryX=0.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="notificationsdb" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Читает, записывает данные&lt;br&gt;Протокол PostgreSQL&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge16" edge="1" parent="1" source="orders" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.0;exitY=0.8;exitPerimeter=0;entryX=0.0;entryY=0.6666666666666666;entryPerimeter=0;labelWidth=310;endSize=24;" target="catalog" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает товары, цены&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.8428571428571429" as="geometry">
+            <Array as="points">
+              <mxPoint x="1820" y="3190" />
+              <mxPoint x="1820" y="1850" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge17" edge="1" parent="1" source="payments" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.0;exitY=0.8;exitPerimeter=0;entryX=0.0;entryY=0.5333333333333333;entryPerimeter=0;labelWidth=310;endSize=24;" target="orders" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает позиции заказа&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.8183" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1860" y="4240" />
+              <mxPoint x="1860" y="3110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge18" edge="1" parent="1" source="notifications" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=20;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.0;exitY=0.8;exitPerimeter=0;entryX=0.0;entryY=0.8833333333333333;entryPerimeter=0;labelWidth=280;endSize=24;" target="users" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает email&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.9289940828402367" as="geometry">
+            <Array as="points">
+              <mxPoint x="1900" y="4890" />
+              <mxPoint x="1900" y="1265" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge20" edge="1" parent="1" source="orders" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#A37820;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.8461538461538461;exitY=0.0;exitPerimeter=0;entryX=0.4032258064516129;entryY=0.0;entryPerimeter=0;dashed=1;dashPattern=8 5;labelWidth=760;endSize=24;" target="broker" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Публикует изменения статуса заказа&lt;br&gt;Kafka Protocol&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.6406779661016949" as="geometry">
+            <Array as="points">
+              <mxPoint x="2750" y="2850" />
+              <mxPoint x="4950" y="2850" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge21" edge="1" parent="1" source="payments" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#A37820;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.8461538461538461;exitY=0.0;exitPerimeter=0;entryX=0.22580645161290322;entryY=1.0;entryPerimeter=0;dashed=1;dashPattern=8 5;labelWidth=760;endSize=24;" target="broker" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Публикует результат оплаты&lt;br&gt;Kafka Protocol&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.5527426160337553" as="geometry">
+            <Array as="points">
+              <mxPoint x="2750" y="3900" />
+              <mxPoint x="4840" y="3900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge23" edge="1" parent="1" source="broker" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#A37820;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.8709677419354839;exitY=0.0;exitPerimeter=0;entryX=0.46153846153846156;entryY=1.0;entryPerimeter=0;dashed=1;dashPattern=8 5;labelWidth=770;endSize=24;" target="orders" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает результат оплаты&lt;br&gt;Kafka Protocol&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.0635451505016722" as="geometry">
+            <Array as="points">
+              <mxPoint x="5240" y="3350" />
+              <mxPoint x="2500" y="3350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge24" edge="1" parent="1" source="broker" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#A37820;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.6774193548387096;exitY=1.0;exitPerimeter=0;dashed=1;dashPattern=8 5;labelWidth=770;endSize=24;entryX=0.46153846153846156;entryY=1;entryPerimeter=0;" target="notifications" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает изменения статуса заказа&lt;br&gt;Kafka Protocol&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.21065375302663436" as="geometry">
+            <Array as="points">
+              <mxPoint x="5120" y="5090" />
+              <mxPoint x="2500" y="5090" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge25" edge="1" parent="1" source="payments" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.0;exitY=0.4666666666666667;exitPerimeter=0;entryX=1.0;entryY=0.4666666666666667;entryPerimeter=0;labelWidth=460;endSize=24;" target="provider" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Создаёт платёж&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.3999999999999999" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge26" edge="1" parent="1" source="provider" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#A37820;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.5;exitY=1.0;exitPerimeter=0;entryX=0.3076923076923077;entryY=1.0;entryPerimeter=0;dashed=1;dashPattern=8 5;labelWidth=460;endSize=24;" target="payments" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Уведомляет о результате оплаты&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.17180616740088106" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="4430" />
+              <mxPoint x="2400" y="4430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge27" edge="1" parent="1" source="notifications" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;jumpStyle=arc;jumpSize=12;exitX=0.0;exitY=0.5;exitPerimeter=0;entryX=1.0;entryY=0.5;entryPerimeter=0;labelWidth=460;endSize=24;" target="email" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Передаёт письмо&lt;br&gt;SMTP с TLS&lt;/div&gt;">
+          <mxGeometry relative="1" x="0.33333333333333326" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="syncKeyline" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#222222;strokeWidth=3;endSize=24;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1000" y="225" as="sourcePoint" />
+            <mxPoint x="1150" y="225" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="syncKeytext" parent="1" style="text;html=1;fontSize=26;fontColor=#18324B;align=left;verticalAlign=middle;whiteSpace=nowrap;" value="Чёрные линии — синхронно:&lt;br&gt;запросы с ожиданием ответа" vertex="1">
+          <mxGeometry height="85" width="950" x="1175" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="asyncKeyline" edge="1" parent="1" style="endArrow=block;endFill=1;strokeColor=#A37820;strokeWidth=3;dashed=1;dashPattern=8 5;endSize=24;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2300" y="225" as="sourcePoint" />
+            <mxPoint x="2450" y="225" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="asyncKeytext" parent="1" style="text;html=1;fontSize=26;fontColor=#18324B;align=left;verticalAlign=middle;whiteSpace=nowrap;" value="Золотой пунктир — асинхронно:&lt;br&gt;события, уведомления" vertex="1">
+          <mxGeometry height="85" width="950" x="2475" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="feedCatalog" edge="1" parent="1" source="feed" style="edgeStyle=none;html=1;rounded=0;endArrow=block;endFill=1;endSize=24;strokeWidth=3;strokeColor=#222222;fontColor=#18324B;fontFamily=Helvetica;fontSize=24;labelBackgroundColor=#FFFFFF;align=center;verticalAlign=middle;whiteSpace=nowrap;labelWidth=520;jumpStyle=arc;jumpSize=12;exitX=0.6153846153846154;exitY=0;exitPerimeter=0;entryX=1;entryY=0.8333333333333334;entryPerimeter=0;" target="catalog" value="&lt;div style=&quot;white-space: nowrap; text-align: center;&quot;&gt;Получает товары по категориям&lt;br&gt;HTTPS, формат JSON&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.23364485981308414" as="geometry">
+            <Array as="points">
+              <mxPoint x="2600" y="2120" />
+              <mxPoint x="3060" y="2120" />
+              <mxPoint x="3060" y="1900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
