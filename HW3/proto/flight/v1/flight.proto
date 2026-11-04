@@ -1,0 +1,70 @@
+syntax = "proto3";
+package flight.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service FlightService {
+  // INVALID_ARGUMENT — неверный IATA-код или дата (ожидается YYYY-MM-DD).
+  rpc SearchFlights(SearchFlightsRequest) returns (SearchFlightsResponse);
+
+  // INVALID_ARGUMENT — ID не является UUID.
+  // NOT_FOUND — рейс не найден.
+  rpc GetFlight(GetFlightRequest) returns (GetFlightResponse);
+
+  // INVALID_ARGUMENT — неверный UUID или seat_count <= 0.
+  // NOT_FOUND — рейс не найден.
+  // RESOURCE_EXHAUSTED — недостаточно свободных мест.
+  // FAILED_PRECONDITION — рейс не SCHEDULED.
+  rpc ReserveSeats(ReserveSeatsRequest) returns (ReserveSeatsResponse);
+
+  // INVALID_ARGUMENT — booking_id не является UUID.
+  // NOT_FOUND — резервация не найдена.
+  // Повторная отмена успешна и не возвращает места ещё раз.
+  rpc ReleaseReservation(ReleaseReservationRequest) returns (ReleaseReservationResponse);
+}
+
+enum FlightStatus {
+  FLIGHT_STATUS_UNSPECIFIED = 0;
+  FLIGHT_STATUS_SCHEDULED = 1;
+  FLIGHT_STATUS_DEPARTED = 2;
+  FLIGHT_STATUS_CANCELLED = 3;
+  FLIGHT_STATUS_COMPLETED = 4;
+}
+message Flight {
+  string id = 1;
+  string flight_number = 2;
+  string airline = 3;
+  string origin = 4;
+  string destination = 5;
+  google.protobuf.Timestamp departure_at = 6;
+  google.protobuf.Timestamp arrival_at = 7;
+  int32 total_seats = 8;
+  int32 available_seats = 9;
+  int64 price = 10;
+  FlightStatus status = 11;
+}
+message SearchFlightsRequest {
+  string origin = 1;
+  string destination = 2;
+  optional string date = 3;
+}
+message SearchFlightsResponse {
+  repeated Flight flights = 1;
+}
+message GetFlightRequest {
+  string id = 1;
+}
+message ReserveSeatsRequest {
+  string flight_id = 1;
+  int32 seat_count = 2;
+  string booking_id = 3;
+}
+message ReleaseReservationRequest {
+  string booking_id = 1;
+}
+
+message GetFlightResponse {
+  Flight flight = 1;
+}
+message ReserveSeatsResponse {}
+message ReleaseReservationResponse {}

@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.ruff_cache/
+.env
+proto/flight/v1/flight_pb2.py
+proto/flight/v1/flight_pb2.pyi
+proto/flight/v1/flight_pb2_grpc.py

@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["proto/flight/v1/flight_pb2.py", "proto/flight/v1/flight_pb2.pyi", "proto/flight/v1/flight_pb2_grpc.py"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "proto"]

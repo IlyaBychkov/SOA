@@ -1,0 +1,53 @@
+Project FlightBooking {
+  database_type: 'PostgreSQL'
+  Note: 'Flight DB: flights и seat_reservations. Booking DB: bookings. Единственный SQL FK — seat_reservations.flight_id → flights.id. Связи с bookings логические, через gRPC. Для создания БД используются миграции Alembic.'
+}
+
+Table flights {
+  id uuid [pk, not null]
+  flight_number text [not null, check: `length(flight_number) > 0`]
+  airline text [not null, check: `length(airline) > 0`]
+  origin char(3) [not null, check: `origin ~ '^[A-Z]{3}$'`, note: 'IATA-код аэропорта вылета']
+  destination char(3) [not null, check: `destination ~ '^[A-Z]{3}$'`, note: 'IATA-код аэропорта прилёта']
+  departure_at timestamptz [not null]
+  departure_date date [not null, note: 'GENERATED: дата departure_at в UTC']
+  arrival_at timestamptz [not null]
+  total_seats integer [not null, check: `total_seats > 0`]
+  available_seats integer [not null, check: `available_seats >= 0`]
+  price bigint [not null, check: `price > 0`, note: 'Целые рубли']
+  status text [not null, check: `status IN ('SCHEDULED', 'DEPARTED', 'CANCELLED', 'COMPLETED')`]
+
+  indexes {
+    (flight_number, departure_date) [unique]
+  }
+  checks {
+    `origin <> destination`
+    `arrival_at > departure_at`
+    `available_seats <= total_seats`
+  }
+}
+
+Table seat_reservations {
+  id uuid [pk, not null]
+  flight_id uuid [not null]
+  booking_id uuid [not null, unique, note: 'Логическая ссылка на bookings.id; другая БД, SQL FK нет']
+  seat_count integer [not null, check: `seat_count > 0`]
+  status text [not null, check: `status IN ('ACTIVE', 'RELEASED', 'EXPIRED')`]
+}
+
+Table bookings {
+  id uuid [pk, not null]
+  user_id text [not null, check: `length(user_id) > 0`]
+  flight_id uuid [not null, note: 'Логическая ссылка на flights.id; другая БД, SQL FK нет']
+  passenger_name text [not null, check: `length(passenger_name) > 0`]
+  passenger_email text [not null, check: `length(passenger_email) > 0`]
+  seat_count integer [not null, check: `seat_count > 0`]
+  total_price bigint [not null, check: `total_price > 0`, note: 'Снимок стоимости в целых рублях']
+  status text [not null, check: `status IN ('CONFIRMED', 'CANCELLED')`]
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Ref flight_reservations: flights.id < seat_reservations.flight_id
+// Только визуальные логические связи. В миграциях эти FK не создаются.
+Ref logical_booking: bookings.id - seat_reservations.booking_id
+Ref logical_flight: flights.id < bookings.flight_id
