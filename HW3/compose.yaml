@@ -24,15 +24,24 @@ services:
       test: [CMD-SHELL, "pg_isready -U booking -d bookings"]
       interval: 1s
       retries: 3
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 1s
+      retries: 3
   flight:
     build: .
     environment:
       SERVICE: flight
+      REDIS_URL: redis://redis:6379/0
       GRPC_API_KEY: ${GRPC_API_KEY:-hw3-local-development-key}
       DATABASE_URL: postgresql://flight:flight-local@flight-db:5432/flights
     command: sh -c "python -m app.db && exec python -m app.flight"
     depends_on:
       flight-db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: [CMD, python, -m, app.flight, --healthcheck]

@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 import grpc
 from google.protobuf.timestamp_pb2 import Timestamp
+from redis import Redis
 
 from app.db import connect
 from proto.flight.v1 import flight_pb2 as pb
@@ -68,6 +69,10 @@ def parse_id(value: str, context: grpc.ServicerContext) -> UUID:
 
 
 class FlightService(rpc.FlightServiceServicer):
+    def __init__(self, cache: Redis) -> None:
+        self.cache = cache
+        self.cache_lock = threading.Lock()
+
     def SearchFlights(
         self, request: pb.SearchFlightsRequest, context: grpc.ServicerContext
     ) -> pb.SearchFlightsResponse:
@@ -86,19 +91,35 @@ class FlightService(rpc.FlightServiceServicer):
             query += " AND departure_date=%s"
             params.append(day)
         query += " ORDER BY departure_at, id"
-        with connect() as conn:
-            rows = conn.execute(query, params).fetchall()
-        return pb.SearchFlightsResponse(flights=[flight_message(row) for row in rows])
+        key = f"search:{request.origin}:{request.destination}:{request.date if request.HasField('date') else 'all'}"
+        with self.cache_lock:
+            cached = self.cache.get(key)
+            logging.info("cache %s: %s", "hit" if cached is not None else "miss", key)
+            if isinstance(cached, bytes):
+                return pb.SearchFlightsResponse.FromString(cached)
+            with connect() as conn:
+                rows = conn.execute(query, params).fetchall()
+            response = pb.SearchFlightsResponse(flights=[flight_message(row) for row in rows])
+            self.cache.set(key, response.SerializeToString(), ex=300)
+            return response
 
     def GetFlight(
         self, request: pb.GetFlightRequest, context: grpc.ServicerContext
     ) -> pb.GetFlightResponse:
         flight_id = parse_id(request.id, context)
-        with connect() as conn:
-            row = conn.execute("SELECT * FROM flights WHERE id=%s", (flight_id,)).fetchone()
-        if row is None:
-            context.abort(grpc.StatusCode.NOT_FOUND, "Flight not found")
-        return pb.GetFlightResponse(flight=flight_message(row))
+        key = f"flight:{flight_id}"
+        with self.cache_lock:
+            cached = self.cache.get(key)
+            logging.info("cache %s: %s", "hit" if cached is not None else "miss", key)
+            if isinstance(cached, bytes):
+                return pb.GetFlightResponse.FromString(cached)
+            with connect() as conn:
+                row = conn.execute("SELECT * FROM flights WHERE id=%s", (flight_id,)).fetchone()
+            if row is None:
+                context.abort(grpc.StatusCode.NOT_FOUND, "Flight not found")
+            response = pb.GetFlightResponse(flight=flight_message(row))
+            self.cache.set(key, response.SerializeToString(), ex=300)
+            return response
 
     def ReserveSeats(
         self, request: pb.ReserveSeatsRequest, context: grpc.ServicerContext
@@ -107,61 +128,68 @@ class FlightService(rpc.FlightServiceServicer):
         booking_id = parse_id(request.booking_id, context)
         if request.seat_count <= 0:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "seat_count must be positive")
-        with connect() as conn, conn.transaction():
-            row = conn.execute(
-                "SELECT * FROM flights WHERE id=%s FOR UPDATE", (flight_id,)
-            ).fetchone()
-            if row is None:
-                context.abort(grpc.StatusCode.NOT_FOUND, "Flight not found")
-            if row["status"] != "SCHEDULED":
-                context.abort(grpc.StatusCode.FAILED_PRECONDITION, "Flight is not scheduled")
-            if row["available_seats"] < request.seat_count:
-                context.abort(grpc.StatusCode.RESOURCE_EXHAUSTED, "Not enough seats")
-            conn.execute(
-                "UPDATE flights SET available_seats=available_seats-%s WHERE id=%s",
-                (request.seat_count, flight_id),
-            )
-            conn.execute(
-                "INSERT INTO seat_reservations (id, booking_id, flight_id, seat_count, status) VALUES (%s,%s,%s,%s,'ACTIVE')",
-                (uuid4(), booking_id, flight_id, request.seat_count),
-            )
+        with self.cache_lock:
+            with connect() as conn, conn.transaction():
+                row = conn.execute(
+                    "SELECT * FROM flights WHERE id=%s FOR UPDATE", (flight_id,)
+                ).fetchone()
+                if row is None:
+                    context.abort(grpc.StatusCode.NOT_FOUND, "Flight not found")
+                if row["status"] != "SCHEDULED":
+                    context.abort(grpc.StatusCode.FAILED_PRECONDITION, "Flight is not scheduled")
+                if row["available_seats"] < request.seat_count:
+                    context.abort(grpc.StatusCode.RESOURCE_EXHAUSTED, "Not enough seats")
+                conn.execute(
+                    "UPDATE flights SET available_seats=available_seats-%s WHERE id=%s",
+                    (request.seat_count, flight_id),
+                )
+                conn.execute(
+                    "INSERT INTO seat_reservations (id, booking_id, flight_id, seat_count, status) VALUES (%s,%s,%s,%s,'ACTIVE')",
+                    (uuid4(), booking_id, flight_id, request.seat_count),
+                )
+            self.cache.flushdb()
         return pb.ReserveSeatsResponse()
 
     def ReleaseReservation(
         self, request: pb.ReleaseReservationRequest, context: grpc.ServicerContext
     ) -> pb.ReleaseReservationResponse:
         booking_id = parse_id(request.booking_id, context)
-        with connect() as conn, conn.transaction():
-            row = conn.execute(
-                "SELECT * FROM seat_reservations WHERE booking_id=%s FOR UPDATE",
-                (booking_id,),
-            ).fetchone()
-            if row is None:
-                context.abort(grpc.StatusCode.NOT_FOUND, "Reservation not found")
-            if row["status"] == "ACTIVE":
-                conn.execute(
-                    "UPDATE flights SET available_seats=available_seats+%s WHERE id=%s",
-                    (row["seat_count"], row["flight_id"]),
-                )
-                conn.execute(
-                    "UPDATE seat_reservations SET status='RELEASED' WHERE booking_id=%s",
+        with self.cache_lock:
+            with connect() as conn, conn.transaction():
+                row = conn.execute(
+                    "SELECT * FROM seat_reservations WHERE booking_id=%s FOR UPDATE",
                     (booking_id,),
-                )
+                ).fetchone()
+                if row is None:
+                    context.abort(grpc.StatusCode.NOT_FOUND, "Reservation not found")
+                if row["status"] == "ACTIVE":
+                    conn.execute(
+                        "UPDATE flights SET available_seats=available_seats+%s WHERE id=%s",
+                        (row["seat_count"], row["flight_id"]),
+                    )
+                    conn.execute(
+                        "UPDATE seat_reservations SET status='RELEASED' WHERE booking_id=%s",
+                        (booking_id,),
+                    )
+            self.cache.flushdb()
         return pb.ReleaseReservationResponse()
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    server = grpc.server(ThreadPoolExecutor(max_workers=10), interceptors=[ApiKeyInterceptor()])
-    add_FlightServiceServicer_to_server(FlightService(), server)
-    server.add_insecure_port("[::]:50051")
-    server.start()
-    logging.info("Flight Service listening on :50051")
-    stopped = threading.Event()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        signal.signal(sig, lambda signum, frame: stopped.set())
-    stopped.wait()
-    server.stop(grace=10).wait()
+    with Redis.from_url(
+        os.environ["REDIS_URL"], socket_connect_timeout=1, socket_timeout=1
+    ) as cache:
+        server = grpc.server(ThreadPoolExecutor(max_workers=10), interceptors=[ApiKeyInterceptor()])
+        add_FlightServiceServicer_to_server(FlightService(cache), server)
+        server.add_insecure_port("[::]:50051")
+        server.start()
+        logging.info("Flight Service listening on :50051")
+        stopped = threading.Event()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            signal.signal(sig, lambda signum, frame: stopped.set())
+        stopped.wait()
+        server.stop(grace=10).wait()
 
 
 def healthcheck() -> None:
