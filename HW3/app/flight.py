@@ -1,7 +1,10 @@
+import hmac
 import logging
+import os
 import re
 import signal
 import threading
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from uuid import UUID, uuid4
@@ -13,6 +16,29 @@ from app.db import connect
 from proto.flight.v1 import flight_pb2 as pb
 from proto.flight.v1 import flight_pb2_grpc as rpc
 from proto.flight.v1.flight_pb2_grpc import add_FlightServiceServicer_to_server
+
+
+class ApiKeyInterceptor(grpc.ServerInterceptor):
+    def __init__(self) -> None:
+        self.key = os.environ["GRPC_API_KEY"]
+        if not self.key:
+            raise ValueError("GRPC_API_KEY must not be empty")
+
+    def intercept_service(
+        self,
+        continuation: Callable[[grpc.HandlerCallDetails], grpc.RpcMethodHandler | None],
+        handler_call_details: grpc.HandlerCallDetails,
+    ) -> grpc.RpcMethodHandler | None:
+        keys = [
+            value for name, value in handler_call_details.invocation_metadata if name == "x-api-key"
+        ]
+        if len(keys) == 1 and isinstance(keys[0], str) and hmac.compare_digest(keys[0], self.key):
+            return continuation(handler_call_details)
+
+        def deny(request: object, context: grpc.ServicerContext) -> None:
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid or missing API key")
+
+        return grpc.unary_unary_rpc_method_handler(deny)
 
 
 def flight_message(row: dict) -> pb.Flight:
@@ -126,7 +152,7 @@ class FlightService(rpc.FlightServiceServicer):
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    server = grpc.server(ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(ThreadPoolExecutor(max_workers=10), interceptors=[ApiKeyInterceptor()])
     add_FlightServiceServicer_to_server(FlightService(), server)
     server.add_insecure_port("[::]:50051")
     server.start()
@@ -142,6 +168,7 @@ def healthcheck() -> None:
     with grpc.insecure_channel("localhost:50051") as channel:
         rpc.FlightServiceStub(channel).SearchFlights(
             pb.SearchFlightsRequest(origin="SVO", destination="LED"),
+            metadata=(("x-api-key", os.environ["GRPC_API_KEY"]),),
             timeout=2,
         )
 

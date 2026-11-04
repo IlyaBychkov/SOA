@@ -3,6 +3,8 @@ package flight.v1;
 
 import "google/protobuf/timestamp.proto";
 
+// Все RPC требуют metadata x-api-key.
+// UNAUTHENTICATED — ключ отсутствует или неверен.
 service FlightService {
   // INVALID_ARGUMENT — неверный IATA-код или дата (ожидается YYYY-MM-DD).
   rpc SearchFlights(SearchFlightsRequest) returns (SearchFlightsResponse);

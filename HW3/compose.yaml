@@ -28,6 +28,7 @@ services:
     build: .
     environment:
       SERVICE: flight
+      GRPC_API_KEY: ${GRPC_API_KEY:-hw3-local-development-key}
       DATABASE_URL: postgresql://flight:flight-local@flight-db:5432/flights
     command: sh -c "python -m app.db && exec python -m app.flight"
     depends_on:
@@ -41,6 +42,7 @@ services:
     build: .
     environment:
       SERVICE: booking
+      GRPC_API_KEY: ${GRPC_API_KEY:-hw3-local-development-key}
       DATABASE_URL: postgresql://booking:booking-local@booking-db:5432/bookings
       FLIGHT_ADDRESS: flight:50051
     command: sh -c "python -m app.db && exec uvicorn app.booking:app --host 0.0.0.0 --port 8000"
