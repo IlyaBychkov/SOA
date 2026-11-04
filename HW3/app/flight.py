@@ -130,6 +130,20 @@ class FlightService(rpc.FlightServiceServicer):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "seat_count must be positive")
         with self.cache_lock:
             with connect() as conn, conn.transaction():
+                existing = conn.execute(
+                    "SELECT * FROM seat_reservations WHERE booking_id=%s", (booking_id,)
+                ).fetchone()
+                if existing:
+                    if (
+                        existing["flight_id"] != flight_id
+                        or existing["seat_count"] != request.seat_count
+                    ):
+                        context.abort(grpc.StatusCode.ALREADY_EXISTS, "booking_id already used")
+                    if existing["status"] != "ACTIVE":
+                        context.abort(
+                            grpc.StatusCode.FAILED_PRECONDITION, "Reservation is not active"
+                        )
+                    return pb.ReserveSeatsResponse()
                 row = conn.execute(
                     "SELECT * FROM flights WHERE id=%s FOR UPDATE", (flight_id,)
                 ).fetchone()

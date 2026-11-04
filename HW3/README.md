@@ -1,136 +1,237 @@
-# HW3 — Flight Booking (7 баллов)
-
-Два синхронных сервиса на Python: Booking (FastAPI REST) → Flight (gRPC).
-У каждого своя PostgreSQL. Рабочая версия для пунктов 1–7.
-REST-обработчики, gRPC и запросы к БД синхронные.
-Одновременные запросы обрабатываются потоками; async остаётся только в служебном lifespan FastAPI.
-Для каждого обращения к БД открывается отдельное подключение без пула.
-Booking `/health` проверяет только свою БД. Compose ожидает готовности баз и Flight перед запуском Booking.
-
-## Запуск
-
-Из папки `HW3`:
-
-```bash
-docker compose up --build
-```
-
-Миграции Alembic применяются автоматически. Данные сохраняются между запусками.
-Swagger: http://localhost:8000/docs. gRPC доступен между контейнерами по адресу `flight:50051`.
-Остановка: `docker compose stop`.
-
-Демонстрационный рейс: `11111111-1111-4111-8111-111111111111`, SU1234,
-SVO → LED, 2026-12-01 10:00 UTC, 100 мест, 5000 RUB за место.
-
-```bash
-curl 'http://localhost:8000/flights?origin=SVO&destination=LED&date=2026-12-01'
-curl -X POST http://localhost:8000/bookings \
-  -H 'Content-Type: application/json' \
-  -d '{"user_id":"student","flight_id":"11111111-1111-4111-8111-111111111111","passenger_name":"Ivan Ivanov","passenger_email":"ivan@example.org","seat_count":2}'
-curl 'http://localhost:8000/bookings?user_id=student'
-curl http://localhost:8000/bookings/BOOKING_ID
-curl -X POST http://localhost:8000/bookings/BOOKING_ID/cancel
-```
-
-`date` необязателен. Поиск возвращает SCHEDULED, даты интерпретируются в UTC.
-Отсутствующий объект → 404; нехватка мест, неактивный рейс, повторная отмена → 409;
-ошибка входных данных → 422; недоступность Flight → 503; таймаут → 504.
+# HW3 — Flight Booking
 
 ## Файлы
 
-- `app/booking.py` — REST, схемы запросов/ответов, gRPC-клиент, бронирования.
-- `app/flight.py` — четыре gRPC-метода и запуск сервера.
-- `app/db.py`, `migrations/` — подключение к БД и независимые миграции двух сервисов.
-  Создание таблиц описано в `001_initial.sql`, соседний `.py` запускает SQL через Alembic.
-- `proto/flight/v1/flight.proto` — четыре RPC, Timestamp, enum и коды ошибок.
-  Генерация через `grpc_tools.protoc` выполняется при сборке образа.
-- `docs/database-schema.dbml` — ER-диаграмма для dbdiagram.io.
-  Откройте https://dbdiagram.io/d и вставьте содержимое файла в левый редактор.
-  `docs/database-schema.png` — та же схема картинкой.
+- `app/booking.py` — REST API, модели запросов и ответов, gRPC-клиент и повторы вызовов.
+- `app/flight.py` — gRPC API, проверка ключа, резервирование мест и Redis-кеш.
+- `app/db.py` — подключение к PostgreSQL и запуск миграций.
+- `migrations/env.py` — подключение Alembic к базе.
+- `migrations/flight/`, `migrations/booking/` — SQL-миграции и их Python-обёртки.
+- `proto/flight/v1/flight.proto` — gRPC-контракт; `proto/buf.yaml` — настройки его проверки.
+- `docs/database-schema.dbml`, `docs/database-schema.png`, `docs/database-schema.svg` — ER-диаграмма.
+- `compose.yaml`, `Dockerfile`, `requirements.txt` — запуск контейнеров, сборка и зависимости.
+- `.env` — локальный API Key.
 
-## Что входит в версию на 7 баллов
+## Запуск
 
-1. `.proto`: четыре RPC, Timestamp, enum и описания бизнес-ошибок.
-2. ER-диаграмма и ограничения таблиц.
-3. REST-сервис Booking, gRPC-сервис Flight, две PostgreSQL и автоматические миграции.
-4. Создание и отмена бронирования с вызовами Flight по gRPC.
-5. Транзакции и блокировки мест; компенсация при неуспешном сохранении Booking.
-6. Аутентификация всех gRPC-методов по API Key из переменных окружения.
-7. Redis: кеш рейсов и поиска с TTL 5 минут, очистка при изменении мест и логи hit/miss.
-
-Создание Booking: GetFlight → ReserveSeats → сохранение бронирования и стоимости.
-Отмена Booking: ReleaseReservation → смена статуса на CANCELLED.
-При ошибке gRPC отмена прерывается, статус Booking не меняется.
-
-Если сохранение Booking или подтверждение транзакции завершилось ошибкой,
-Booking вызывает ReleaseReservation. Если сам ReserveSeats завершился ошибкой,
-сохранение Booking не начинается. Отмена блокирует строку Booking до конца транзакции.
-
-Операции Flight с местами и резервациями выполняются в одной транзакции;
-SELECT FOR UPDATE защищает проверку мест и повторный возврат.
-Повторов RPC нет. Повтор ReserveSeats с тем же booking_id не поддерживается.
-
-Это две независимые БД, а не общая транзакция: при аварии процесса или недоступности
-Flight компенсация не гарантирована. Неоднозначный результат ReserveSeats при таймауте
-отдельно не обрабатывается: места могут остаться занятыми без Booking.
-Ошибка компенсации записывается в лог с booking_id.
-Если подтверждение отмены в Booking упало после возврата мест, отмену можно повторить:
-ReleaseReservation не возвращает места дважды.
-
-## Redis
-
-Flight подключается к Redis по `REDIS_URL`, заданному в Compose.
-GetFlight кешируется под ключом `flight:{id}`, SearchFlights —
-`search:{origin}:{destination}:{date}` (без даты используется `all`).
-В Redis сохраняются готовые Protobuf-ответы. Все ключи имеют TTL 300 секунд.
-
-При запросе сначала читается Redis; при miss — PostgreSQL, затем ответ записывается в Redis.
-В логах Flight видны `cache hit` и `cache miss`.
-После успешного ReserveSeats или ReleaseReservation очищается весь кеш Flight:
-так устаревшие данные удаляются и из отдельных рейсов, и из всех вариантов поиска.
-Redis выделен только под этот кеш, других данных в нём нет.
-
-Чтение и заполнение кеша, изменение мест и очистка выполняются под одной блокировкой потоков.
-Это не даёт параллельному чтению записать старые данные после очистки.
-Решение рассчитано на один процесс Flight; его RPC выполняются последовательно.
-Redis запускается без отдельного тома: кеш можно заполнить заново из PostgreSQL.
-
-## API Key
-
-Booking передаёт ключ в metadata `x-api-key` при каждом gRPC-вызове, включая компенсацию.
-Flight проверяет ключ одним interceptor перед всеми четырьмя методами.
-Без ключа или с неверным ключом RPC завершается с UNAUTHENTICATED.
-Healthcheck Flight также передаёт ключ.
-
-Оба сервиса читают `GRPC_API_KEY` из окружения. Compose задаёт демонстрационное значение.
-Чтобы задать своё, создайте рядом с `compose.yaml` файл `.env`:
-
-```dotenv
-GRPC_API_KEY=my-local-key
-```
-
-Пустой ключ запрещён при запуске приложения. REST-клиенту этот ключ передавать не нужно:
-он используется между Booking и Flight. Ошибка аутентификации Flight возвращается REST-клиенту как 502.
-
-## Python в VS Code
-
-Откройте папку `SOA`: для неё настроено отдельное окружение `SOA/.venv`.
-Создание окружения и установка зависимостей из папки `SOA`:
+Все команды ниже выполняются из `HW3` в одном терминале. Локальный Python и дополнительные утилиты не нужны.
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r HW3/requirements.txt
-cd HW3
-../.venv/bin/python -m grpc_tools.protoc -I. --python_out=. --pyi_out=. --grpc_python_out=. proto/flight/v1/flight.proto
+docker compose up --build -d --wait
+curl -sS "http://localhost:8000/health"
+docker compose ps
 ```
 
-Последняя команда создаёт Python-код и описания типов для редактора.
-Повторяйте её после изменения `.proto`. В Docker генерация выполняется автоматически.
+Ожидается `{"status":"ok"}`. Если сервер ещё запускается, повторить запрос через пару секунд. Swagger: [http://localhost:8000/docs](http://localhost:8000/docs).
 
-## ER-диаграмма
+Таблицы и применённые миграции:
 
-![ER-диаграмма](docs/database-schema.png)
+```bash
+docker compose exec -T flight-db psql -U flight -d flights -c '\dt' -c 'TABLE alembic_version;'
+docker compose exec -T booking-db psql -U booking -d bookings -c '\dt' -c 'TABLE alembic_version;'
+```
 
-Flight DB содержит `flights` и `seat_reservations`, Booking DB — `bookings`.
-SQL FK есть только между `seat_reservations.flight_id` и `flights.id`.
-Две связи с `bookings` показаны логически: SQL FK между разными БД нет.
+## Рейс для проверки
+
+Используется готовый рейс `SU1234`: SVO → LED, 1 декабря 2026 года, 100 мест по 5000 рублей. Он уже добавляется миграцией. Количества мест ниже указаны для исходного состояния без активных бронирований.
+
+```bash
+FLIGHT_ID="11111111-1111-4111-8111-111111111111"
+```
+
+## REST: поиск и получение рейса
+
+Оба поиска должны содержать `SU1234`; получение по ID — показать 100 доступных мест.
+
+```bash
+curl -sS "http://localhost:8000/flights?origin=SVO&destination=LED"
+curl -sS "http://localhost:8000/flights?origin=SVO&destination=LED&date=2026-12-01"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+```
+
+## Redis: промах, попадание и TTL
+
+Удалить только ключи демонстрационных запросов, затем выполнить каждый запрос дважды:
+
+```bash
+docker compose exec -T redis redis-cli DEL "flight:$FLIGHT_ID" "search:SVO:LED:2026-12-01"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+curl -sS "http://localhost:8000/flights?origin=SVO&destination=LED&date=2026-12-01"
+curl -sS "http://localhost:8000/flights?origin=SVO&destination=LED&date=2026-12-01"
+docker compose exec -T redis redis-cli TTL "flight:$FLIGHT_ID"
+docker compose exec -T redis redis-cli TTL "search:SVO:LED:2026-12-01"
+docker compose logs --tail 20 flight
+```
+
+TTL — положительное число не больше 300. В логах — `cache miss`, затем `cache hit` для каждого ключа.
+
+## REST: создание, получение и список бронирований
+
+```bash
+curl -sS -X POST "http://localhost:8000/bookings" \
+    -H 'Content-Type: application/json' -d @- <<JSON
+{
+        "user_id": "defense-$FLIGHT_ID",
+        "flight_id": "$FLIGHT_ID",
+        "passenger_name": "Student",
+        "passenger_email": "student@example.org",
+        "seat_count": 2
+}
+JSON
+```
+
+Скопировать `id` бронирования из ответа:
+
+```bash
+BOOKING_ID="сюда UUID бронирования"
+
+docker compose exec -T redis redis-cli EXISTS "flight:$FLIGHT_ID" "search:SVO:LED:2026-12-01"
+curl -sS "http://localhost:8000/bookings/$BOOKING_ID"
+curl -sS "http://localhost:8000/bookings?user_id=defense-$FLIGHT_ID"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+curl -sS "http://localhost:8000/flights?origin=SVO&destination=LED&date=2026-12-01"
+```
+
+Бронирование — `CONFIRMED`, стоимость — 10000, осталось 98 мест. `EXISTS` сразу после создания возвращает `0`: оба старых ключа удалены.
+
+## REST: отмена
+
+```bash
+curl -sS -w '\nHTTP %{http_code}\n' -X POST "http://localhost:8000/bookings/$BOOKING_ID/cancel"
+docker compose exec -T redis redis-cli EXISTS "flight:$FLIGHT_ID" "search:SVO:LED:2026-12-01"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+curl -sS -w '\nHTTP %{http_code}\n' -X POST "http://localhost:8000/bookings/$BOOKING_ID/cancel"
+```
+
+Первая отмена — `200`, статус `CANCELLED`, ключи удалены, снова 100 мест. Повторная отмена — `409`.
+
+## REST: ошибки
+
+По порядку: отсутствующий рейс — `404`, отсутствующее бронирование — `404`, неверный IATA-код — `422`, ноль мест — `422`, недостаточно мест — `409`.
+
+```bash
+curl -sS -w '\nHTTP %{http_code}\n' "http://localhost:8000/flights/00000000-0000-0000-0000-000000000001"
+curl -sS -w '\nHTTP %{http_code}\n' "http://localhost:8000/bookings/00000000-0000-0000-0000-000000000001"
+curl -sS -w '\nHTTP %{http_code}\n' "http://localhost:8000/flights?origin=bad&destination=LED"
+curl -sS -w '\nHTTP %{http_code}\n' -X POST "http://localhost:8000/bookings" \
+    -H 'Content-Type: application/json' -d @- <<JSON
+{
+        "user_id": "defense-$FLIGHT_ID",
+        "flight_id": "$FLIGHT_ID",
+        "passenger_name": "Student",
+        "passenger_email": "student@example.org",
+        "seat_count": 0
+}
+JSON
+curl -sS -w '\nHTTP %{http_code}\n' -X POST "http://localhost:8000/bookings" \
+    -H 'Content-Type: application/json' -d @- <<JSON
+{
+        "user_id": "defense-$FLIGHT_ID",
+        "flight_id": "$FLIGHT_ID",
+        "passenger_name": "Student",
+        "passenger_email": "student@example.org",
+        "seat_count": 101
+}
+JSON
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+```
+
+После неуспешных запросов по-прежнему 100 мест.
+
+## Повторы при недоступности Flight
+
+Ожидается `503` (`UNAVAILABLE`) или `504` (`DEADLINE_EXCEEDED`). В логах Booking — `retry 2/3` и `retry 3/3`. Паузы между попытками — 0,1 и 0,2 секунды; при таймаутах весь запрос занимает около 15 секунд.
+
+```bash
+docker compose stop flight
+curl -sS -w '\nHTTP %{http_code}, %{time_total} seconds\n' "http://localhost:8000/flights/$FLIGHT_ID"
+docker compose logs --tail 15 booking
+docker compose up -d --wait flight
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+```
+
+## Таймаут после успешного резервирования
+
+Временный триггер задерживает запись резервации на 6 секунд. Бронирование должно создаться после повторного вызова: 3 места списываются один раз, остаётся 97.
+
+```bash
+docker compose exec -T flight-db psql -v ON_ERROR_STOP=1 -v flight_id="$FLIGHT_ID" -U flight -d flights <<'SQL'
+CREATE FUNCTION defense_delay() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM pg_sleep(6);
+    RETURN NEW;
+END $$;
+CREATE TRIGGER defense_delay BEFORE INSERT ON seat_reservations
+FOR EACH ROW WHEN (NEW.flight_id = :'flight_id'::uuid)
+EXECUTE FUNCTION defense_delay();
+SQL
+
+curl -sS -X POST "http://localhost:8000/bookings" \
+    -H 'Content-Type: application/json' -d @- <<JSON
+{
+        "user_id": "defense-$FLIGHT_ID",
+        "flight_id": "$FLIGHT_ID",
+        "passenger_name": "Student",
+        "passenger_email": "student@example.org",
+        "seat_count": 3
+}
+JSON
+```
+
+Скопировать `id` бронирования из ответа:
+
+```bash
+BOOKING_ID="сюда UUID бронирования"
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+docker compose logs --tail 15 booking
+
+docker compose exec -T flight-db psql -v ON_ERROR_STOP=1 -U flight -d flights <<'SQL'
+DROP TRIGGER defense_delay ON seat_reservations;
+DROP FUNCTION defense_delay();
+SQL
+curl -sS -X POST "http://localhost:8000/bookings/$BOOKING_ID/cancel"
+```
+
+## Откат Booking и возврат мест при ошибке сохранения
+
+Временный триггер вызывает ошибку именно при подтверждении транзакции Booking. POST должен вернуть `503`, а у рейса останется 100 мест.
+
+```bash
+docker compose exec -T booking-db psql -v ON_ERROR_STOP=1 -v flight_id="$FLIGHT_ID" -U booking -d bookings <<'SQL'
+CREATE FUNCTION defense_reject_commit() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    RAISE EXCEPTION 'Demonstration: booking commit failed';
+END $$;
+CREATE CONSTRAINT TRIGGER defense_reject_commit AFTER INSERT ON bookings
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW WHEN (NEW.flight_id = :'flight_id'::uuid)
+EXECUTE FUNCTION defense_reject_commit();
+SQL
+
+curl -sS -w '\nHTTP %{http_code}\n' -X POST "http://localhost:8000/bookings" \
+    -H 'Content-Type: application/json' -d @- <<JSON
+{
+        "user_id": "defense-$FLIGHT_ID",
+        "flight_id": "$FLIGHT_ID",
+        "passenger_name": "Student",
+        "passenger_email": "student@example.org",
+        "seat_count": 2
+}
+JSON
+curl -sS "http://localhost:8000/flights/$FLIGHT_ID"
+curl -sS "http://localhost:8000/bookings?user_id=defense-$FLIGHT_ID"
+
+docker compose exec -T booking-db psql -v ON_ERROR_STOP=1 -U booking -d bookings <<'SQL'
+DROP TRIGGER defense_reject_commit ON bookings;
+DROP FUNCTION defense_reject_commit();
+SQL
+```
+
+## Остановка
+
+Бронирования из сценария отменены, места возвращены. Записи об отменённых бронированиях остаются в базе.
+
+```bash
+docker compose stop
+```

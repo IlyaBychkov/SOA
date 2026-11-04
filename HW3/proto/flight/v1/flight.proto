@@ -16,7 +16,9 @@ service FlightService {
   // INVALID_ARGUMENT — неверный UUID или seat_count <= 0.
   // NOT_FOUND — рейс не найден.
   // RESOURCE_EXHAUSTED — недостаточно свободных мест.
-  // FAILED_PRECONDITION — рейс не SCHEDULED.
+  // FAILED_PRECONDITION — рейс не SCHEDULED или резервация не ACTIVE.
+  // ALREADY_EXISTS — booking_id уже использован с другими параметрами.
+  // Повтор с теми же параметрами для ACTIVE возвращает успех без списания мест.
   rpc ReserveSeats(ReserveSeatsRequest) returns (ReserveSeatsResponse);
 
   // INVALID_ARGUMENT — booking_id не является UUID.

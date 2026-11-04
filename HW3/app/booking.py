@@ -1,8 +1,10 @@
 import logging
 import os
+import time
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
 import grpc
@@ -51,6 +53,20 @@ class FlightRead(BaseModel):
 logger = logging.getLogger(__name__)
 
 
+def call_flight(method: Callable, message: object, metadata: tuple) -> Any:
+    for attempt in range(3):
+        try:
+            return method(message, metadata=metadata, timeout=5)
+        except grpc.RpcError as exc:
+            if attempt == 2 or exc.code() not in (
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.DEADLINE_EXCEEDED,
+            ):
+                raise
+            logger.warning("Flight RPC %s; retry %s/3", exc.code().name, attempt + 2)
+            time.sleep(0.1 * 2**attempt)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     key = os.environ["GRPC_API_KEY"]
@@ -72,6 +88,7 @@ def grpc_error(request: Request, exc: grpc.RpcError) -> JSONResponse:
         grpc.StatusCode.NOT_FOUND: 404,
         grpc.StatusCode.RESOURCE_EXHAUSTED: 409,
         grpc.StatusCode.FAILED_PRECONDITION: 409,
+        grpc.StatusCode.ALREADY_EXISTS: 409,
         grpc.StatusCode.UNAUTHENTICATED: 502,
         grpc.StatusCode.UNAVAILABLE: 503,
         grpc.StatusCode.DEADLINE_EXCEEDED: 504,
@@ -118,15 +135,15 @@ def search_flights(
     if date is not None:
         query.date = date.isoformat()
     client = request.app.state.flight
-    result = client.SearchFlights(query, metadata=request.app.state.metadata, timeout=5)
+    result = call_flight(client.SearchFlights, query, request.app.state.metadata)
     return [flight_json(flight) for flight in result.flights]
 
 
 @app.get("/flights/{flight_id}", response_model=FlightRead)
 def get_flight(request: Request, flight_id: UUID) -> dict:
     client = request.app.state.flight
-    result = client.GetFlight(
-        pb.GetFlightRequest(id=str(flight_id)), metadata=request.app.state.metadata, timeout=5
+    result = call_flight(
+        client.GetFlight, pb.GetFlightRequest(id=str(flight_id)), request.app.state.metadata
     )
     return flight_json(result.flight)
 
@@ -134,21 +151,19 @@ def get_flight(request: Request, flight_id: UUID) -> dict:
 @app.post("/bookings", response_model=BookingRead, status_code=201)
 def create_booking(request: Request, body: BookingCreate) -> dict:
     client = request.app.state.flight
-    flight = client.GetFlight(
-        pb.GetFlightRequest(id=str(body.flight_id)),
-        metadata=request.app.state.metadata,
-        timeout=5,
+    flight = call_flight(
+        client.GetFlight, pb.GetFlightRequest(id=str(body.flight_id)), request.app.state.metadata
     ).flight
     booking_id = uuid4()
     total_price = flight.price * body.seat_count
-    client.ReserveSeats(
+    call_flight(
+        client.ReserveSeats,
         pb.ReserveSeatsRequest(
             flight_id=str(body.flight_id),
             booking_id=str(booking_id),
             seat_count=body.seat_count,
         ),
-        metadata=request.app.state.metadata,
-        timeout=5,
+        request.app.state.metadata,
     )
     try:
         with connect() as conn:
@@ -167,10 +182,10 @@ def create_booking(request: Request, body: BookingCreate) -> dict:
             assert row is not None
     except Exception:
         try:
-            client.ReleaseReservation(
+            call_flight(
+                client.ReleaseReservation,
                 pb.ReleaseReservationRequest(booking_id=str(booking_id)),
-                metadata=request.app.state.metadata,
-                timeout=5,
+                request.app.state.metadata,
             )
         except grpc.RpcError:
             logger.exception("Cannot release reservation for booking %s", booking_id)
@@ -199,10 +214,10 @@ def cancel_booking(request: Request, booking_id: UUID) -> dict:
         if row["status"] != "CONFIRMED":
             raise HTTPException(409, "Booking is already cancelled")
         client = request.app.state.flight
-        client.ReleaseReservation(
+        call_flight(
+            client.ReleaseReservation,
             pb.ReleaseReservationRequest(booking_id=str(booking_id)),
-            metadata=request.app.state.metadata,
-            timeout=5,
+            request.app.state.metadata,
         )
         row = conn.execute(
             "UPDATE bookings SET status='CANCELLED' WHERE id=%s RETURNING *",
