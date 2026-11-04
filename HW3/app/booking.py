@@ -133,28 +133,38 @@ def create_booking(request: Request, body: BookingCreate) -> dict:
     ).flight
     booking_id = uuid4()
     total_price = flight.price * body.seat_count
-    with connect() as conn:
-        client.ReserveSeats(
-            pb.ReserveSeatsRequest(
-                flight_id=str(body.flight_id),
-                booking_id=str(booking_id),
-                seat_count=body.seat_count,
-            ),
-            timeout=5,
-        )
-        row = conn.execute(
-            "INSERT INTO bookings (id,user_id,flight_id,passenger_name,passenger_email,seat_count,total_price,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'CONFIRMED') RETURNING *",
-            (
-                booking_id,
-                body.user_id,
-                body.flight_id,
-                body.passenger_name,
-                body.passenger_email,
-                body.seat_count,
-                total_price,
-            ),
-        ).fetchone()
-        assert row is not None
+    client.ReserveSeats(
+        pb.ReserveSeatsRequest(
+            flight_id=str(body.flight_id),
+            booking_id=str(booking_id),
+            seat_count=body.seat_count,
+        ),
+        timeout=5,
+    )
+    try:
+        with connect() as conn:
+            row = conn.execute(
+                "INSERT INTO bookings (id,user_id,flight_id,passenger_name,passenger_email,seat_count,total_price,status) VALUES (%s,%s,%s,%s,%s,%s,%s,'CONFIRMED') RETURNING *",
+                (
+                    booking_id,
+                    body.user_id,
+                    body.flight_id,
+                    body.passenger_name,
+                    body.passenger_email,
+                    body.seat_count,
+                    total_price,
+                ),
+            ).fetchone()
+            assert row is not None
+    except Exception:
+        try:
+            client.ReleaseReservation(
+                pb.ReleaseReservationRequest(booking_id=str(booking_id)), timeout=5
+            )
+        except grpc.RpcError:
+            logger.exception("Cannot release reservation for booking %s", booking_id)
+        raise
+
     return row
 
 
@@ -169,8 +179,10 @@ def get_booking(booking_id: UUID) -> dict:
 
 @app.post("/bookings/{booking_id}/cancel", response_model=BookingRead)
 def cancel_booking(request: Request, booking_id: UUID) -> dict:
-    with connect() as conn:
-        row = conn.execute("SELECT * FROM bookings WHERE id=%s", (booking_id,)).fetchone()
+    with connect() as conn, conn.transaction():
+        row = conn.execute(
+            "SELECT * FROM bookings WHERE id=%s FOR UPDATE", (booking_id,)
+        ).fetchone()
         if row is None:
             raise HTTPException(404, "Booking not found")
         if row["status"] != "CONFIRMED":
