@@ -1,0 +1,34 @@
+@startuml
+participant "Банк" as Bank
+participant API
+database PostgreSQL as DB
+participant "Планировщик" as Scheduler
+queue RabbitMQ as MQ
+participant "Обработчик" as Worker
+participant "Push / SMS" as Provider
+Bank -> API: Передать событие
+API -> DB: Сохранить уведомление и задание
+DB --> API: Запись подтверждена
+API --> Bank: Задание принято
+Scheduler -> DB: Найти готовое задание
+Scheduler -> MQ: Поставить в очередь
+MQ --> Scheduler: Задание принято в очередь
+Scheduler -> DB: Отметить передачу в очередь
+MQ -> Worker: Передать задание
+Worker -> DB: Записать попытку push
+Worker -> Provider: Отправить push
+alt Push доставлен
+  Provider -> API: Подтвердить доставку push
+  API -> DB: Сохранить отчёт
+else Нужен резервный канал
+  Worker -> DB: Записать попытку SMS
+  Worker -> Provider: Отправить SMS
+  Provider -> API: Подтвердить доставку SMS
+  API -> DB: Сохранить отчёт
+else Нужен повтор позже
+  Worker -> DB: Записать результат и время повтора
+  Worker -> MQ: Подтвердить обработку задания
+  Scheduler -> DB: Найти задание, у которого наступил срок повтора
+  Scheduler -> MQ: Поставить задание в очередь повторно
+end
+@enduml

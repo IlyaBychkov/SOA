@@ -1,0 +1,24 @@
+@startuml
+participant "Банк" as Bank
+participant API
+participant Temporal as T
+participant "Обработчик" as Worker
+database PostgreSQL as DB
+participant "Push / SMS" as Provider
+Bank -> API: Передать событие
+API -> T: Запустить workflow
+T --> API: Workflow сохранён
+API --> Bank: Задание принято
+T -> Worker: Назначить отправку
+Worker -> Provider: Отправить push
+alt Push доставлен
+  Provider -> Worker: Подтвердить доставку push
+else Push отклонён или доставка не подтверждена после проверки
+  T -> Worker: Назначить резервную отправку
+  Worker -> Provider: Отправить SMS
+  Provider -> Worker: Подтвердить доставку SMS
+end
+Worker -> DB: Сохранить отчёт о доставке
+Worker -> T: Сообщить о доставке
+T -> T: Завершить workflow
+@enduml
