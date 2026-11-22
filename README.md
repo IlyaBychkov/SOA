@@ -6,3 +6,4 @@
 - [HW2 — Marketplace: OpenAPI + CRUD](HW2/README.md)
 - [HW3 — Flight Booking: gRPC + Redis](HW3/README.md)
 - [HW4 — Требования и архитектурное мышление](HW4/README.md)
+- [HW5 — Online Cinema: Event Streaming + Analytics Pipeline](HW5/README.md)

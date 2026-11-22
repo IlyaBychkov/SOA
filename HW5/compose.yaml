@@ -1,0 +1,91 @@
+name: soa-hw5
+
+x-clickhouse-env: &clickhouse-env
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: analytics
+  CLICKHOUSE_PASSWORD: analytics-local
+
+services:
+  kafka:
+    image: apache/kafka:3.9.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes: [kafka-data:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD, /opt/kafka/bin/kafka-topics.sh, --bootstrap-server, kafka:9092, --list]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.1.0
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:9092
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      kafka: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8081/subjects]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    environment:
+      <<: *clickhouse-env
+      CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: "1"
+      CLICKHOUSE_DO_NOT_CHOWN: "1"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./proto/movie/v1/movie_event.proto:/var/lib/clickhouse/format_schemas/movie_event.proto:ro
+      - ./migrations/clickhouse:/docker-entrypoint-initdb.d:ro
+    depends_on:
+      movie: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, 'clickhouse-client --host clickhouse --user "$$CLICKHOUSE_USER" --password "$$CLICKHOUSE_PASSWORD" -q "SELECT event_id FROM movie_events LIMIT 0"']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  movie:
+    build: .
+    stop_grace_period: 15s
+    command: [uvicorn, app.movie:app, --host, 0.0.0.0, --port, "8000"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      GENERATE_EVENTS: ${GENERATE_EVENTS:-0}
+    ports: ["127.0.0.1:${MOVIE_PORT:-8000}:8000"]
+    depends_on:
+      schema-registry: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://localhost:8000/openapi.json', timeout=2)"]
+      interval: 2s
+      retries: 15
+
+  test:
+    build: .
+    profiles: [test]
+    command: [python, -m, unittest, tests.test_pipeline]
+    environment:
+      <<: *clickhouse-env
+    depends_on:
+      clickhouse: {condition: service_healthy}
+
+volumes:
+  kafka-data:
+  clickhouse-data:

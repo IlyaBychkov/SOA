@@ -1,0 +1,4 @@
+__pycache__/
+.ruff_cache/
+.env
+proto/movie/v1/movie_event_pb2.py

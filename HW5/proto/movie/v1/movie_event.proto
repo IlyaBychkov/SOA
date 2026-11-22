@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package movie.v1;
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_VIEW_STARTED = 1;
+  EVENT_TYPE_VIEW_FINISHED = 2;
+  EVENT_TYPE_VIEW_PAUSED = 3;
+  EVENT_TYPE_VIEW_RESUMED = 4;
+  EVENT_TYPE_LIKED = 5;
+  EVENT_TYPE_SEARCHED = 6;
+}
+
+enum DeviceType {
+  DEVICE_TYPE_UNSPECIFIED = 0;
+  DEVICE_TYPE_MOBILE = 1;
+  DEVICE_TYPE_DESKTOP = 2;
+  DEVICE_TYPE_TV = 3;
+  DEVICE_TYPE_TABLET = 4;
+}
+
+message MovieEvent {
+  string event_id = 1;  // UUID in canonical string representation
+  string user_id = 2;
+  string movie_id = 3;
+  EventType event_type = 4;
+  int64 timestamp = 5;  // UTC Unix milliseconds
+  DeviceType device_type = 6;
+  string session_id = 7;
+  uint32 progress_seconds = 8;  // zero for events unrelated to playback
+}
